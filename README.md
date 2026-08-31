@@ -41,6 +41,24 @@ flowchart LR
     RL --> MEM
 ```
 
+## External interface view
+
+This view shows how a system connects to the FIFO without exposing its internal modules:
+
+```mermaid
+flowchart TB
+    WREQ["Write request<br/>wdata, winc"] --> FIFO["Asynchronous FIFO<br/>Depth: 2**ADDRSIZE<br/>Width: DATASIZE"]
+    WCTRL["Write-domain control<br/>wclk, wrst_n"] --> FIFO
+    RREQ["Read request<br/>rinc"] --> FIFO
+    RCTRL["Read-domain control<br/>rclk, rrst_n"] --> FIFO
+
+    FIFO --> RDATA["Read data<br/>rdata"]
+    FIFO --> WSTAT["Write-domain status<br/>wfull, walmost_full"]
+    FIFO --> RSTAT["Read-domain status<br/>rempty, ralmost_empty"]
+```
+
+`winc` requests a write of `wdata` in the `wclk` domain, while `rinc` requests that the read pointer advance in the independent `rclk` domain. The status outputs provide flow control so upstream logic does not write when full and downstream logic does not read when empty.
+
 Each clock domain owns its local binary pointer. The binary pointer selects the memory address and is converted to Gray code before crossing into the other domain. Because adjacent Gray-code values differ by only one bit, the receiving domain can safely capture the pointer through a two-stage synchronizer.
 
 ### Write path
